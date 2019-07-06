@@ -48,8 +48,8 @@ double measAbsMag(const double phi[L][L]);
 
 //Hybrid Monte-Carlo
 int hmc(double phi[L][L], param p, int iter);
-void forceU(double fU[L][L], double phi[L][L], param p);
-void update_mom(double mom[L][L], double fU[L][L], param p, double dt);
+void force_phi(double fphi[L][L], double phi[L][L], param p);
+void update_mom(double mom[L][L], double fphi[L][L], param p, double dt);
 void update_phi(double phi[L][L], double mom[L][L], param p, double dt);
 void trajectory(double mom[L][L], double phi[L][L], param p);
 
@@ -87,13 +87,13 @@ int main(int argc, char **argv) {
   param p;
   p.Latsize = L;
   p.lambda = 0.125; 
-  p.musqr = -0.34;
-  p.nStep = 8;
+  p.musqr = -0.36;
+  p.nStep = 10;
   p.tau = 1.0;
   p.dt = p.tau/p.nStep;
-  p.nTherm = 10000;
-  p.nIter = 10000000;
-  p.nMeas = 100;
+  p.nTherm = 1000;
+  p.nIter = 10000;
+  p.nMeas = 25;
   p.nHMC = 5;
   p.verbose = true;
   p.debug = false;
@@ -222,11 +222,11 @@ int main(int argc, char **argv) {
       // Diagnostics and observables
       //---------------------------------------------------------------------
       // 1. Try to keep the acceptance rate between 0.75 - 0.85. Do this by 
-      //    varying the step size of the HMC integrator.
+      //    varying the number of steps of the HMC integrator, keeping tau=1.0.
       // 2. <exp(-dH)> should be ~1.0.
-      // 3. <dH> should be ~0.0, and ever so slightly positive.
+      // 3. <dH> should be ~0.0, and ever so slightly positive. Why?
       // 4. <phi>, <phi**2>, <phi**4> and the Binder cumulant depend on
-      //    musqr and lambda.
+      //    musqr, lambda, and the problem size.
       if(p.verbose) {
 	cout << "measurement " << measurement << endl;
 	cout << "HMC acceptance rate = " << (double)accepted/nHMC << endl;
@@ -289,7 +289,7 @@ void latticePercolate(bool bond[L][L][4], int label[L][L], const double phi[L][L
     for(int y=0; y<L; y++){
 
       //Test if x the bond is active
-      probability = 1.0 -  exp( -2.0 * phi[x][y]*phi[(x + 1)%L][y]);
+      probability = 1.0 -  exp( -2.0 * phi[x][y]*phi[(x+1)%L][y]);
       if (drand48() < probability) {
 	bond[x][y][0] = true;
 	bond[(x+1)%L][y][2] = true;
@@ -310,13 +310,13 @@ void latticePercolate(bool bond[L][L][4], int label[L][L], const double phi[L][L
 }
 
 //Use the bonds computed in latticePercolate() to identify the culsters.
-//Find min of connection to local 4 point stencil. Each lattice site
+//Find min label connection to local 4 point stencil. Each lattice site
 //starts with a label identical to its lexicographic 2D coord. 
-//We test to see if its neighbours have a lower label. If so,
-//this lower label is propagated to the site. After a finite number
+//We test to see if its neighbours are connected via a bond, and have a
+//lower label. If so, this lower label is propagated to the site. After a finite number
 //of applications of this function, each site in each cluster (as defined by the
 //bond structure) will have a label unique to the cluster, equal to the
-//smallest lexicographic coordinate.
+//smallest lexicographic coordinate in that cluster.
 bool swendsenWang(int label[L][L], const bool bond[L][L][4]) {
   
   bool stop = true;
@@ -406,7 +406,7 @@ int hmc(double phi[L][L], param p, int iter) {
 
   //Perform trajectory
   Hold = calcH(mom, phi, p);
-  trajectory(mom, phi, p); // MD trajectory using Verlet  
+  trajectory(mom, phi, p); // MD trajectory using Leapfrog
   H = calcH(mom, phi, p);
 
   //record HMC diagnostics
@@ -434,51 +434,51 @@ int hmc(double phi[L][L], param p, int iter) {
 void trajectory(double mom[L][L], double phi[L][L], param p) {
 
   const double dt = p.dt;
-  double fU[L][L];
+  double fphi[L][L];
   //Initial half step:
-  //P_{1/2} = P_0 - dtau/2 * fU
-  forceU(fU, phi, p);
-  update_mom(mom, fU, p, 0.5*dt);
+  //P_{1/2} = P_0 - dtau/2 * fphi
+  force_phi(fphi, phi, p);
+  update_mom(mom, fphi, p, 0.5*dt);
   
   for(int k=1; k<p.nStep; k++) {
     
-    //U_{k} = U_{k-1} + P_{k-1/2} * dt
+    //phi_{k} = phi_{k-1} + P_{k-1/2} * dt
     update_phi(phi, mom, p, dt);
     
-    //P_{k+1/2} = P_{k-1/2} - fU * dt 
-    forceU(fU, phi, p);
-    update_mom(mom, fU,  p, dt);
+    //P_{k+1/2} = P_{k-1/2} - fphi * dt 
+    force_phi(fphi, phi, p);
+    update_mom(mom, fphi,  p, dt);
     
   }
   
   //Final half step.
-  //U_{n} = U_{n-1} + P_{n-1/2} * dt
+  //phi_{n} = phi_{n-1} + P_{n-1/2} * dt
   update_phi(phi, mom, p, dt);
-  forceU(fU, phi, p);
-  update_mom(mom, fU, p, 0.5*dt);
+  force_phi(fphi, phi, p);
+  update_mom(mom, fphi, p, 0.5*dt);
   
   return;
 }
 
 //Compute the HMC force from the field
-void forceU(double fU[L][L], double phi[L][L], param p) {
+void force_phi(double fphi[L][L], double phi[L][L], param p) {
   
     for(int x=0; x<L; x++)
       for(int y=0; y<L; y++) {
-	fU[x][y] = 0.0;
-	fU[x][y] -= phi[(x+1)%L][y] - 2.0*phi[x][y] + phi[(x-1+L)%L][y];
-	fU[x][y] -= phi[x][(y+1)%L] - 2.0*phi[x][y] + phi[x][(y-1+L)%L];
-	fU[x][y] += (2.0*p.musqr + 4.0*p.lambda*phi[x][y]*phi[x][y]) * phi[x][y];
+	fphi[x][y] = 0.0;
+	fphi[x][y] -= phi[(x+1)%L][y] - 2.0*phi[x][y] + phi[(x-1+L)%L][y];
+	fphi[x][y] -= phi[x][(y+1)%L] - 2.0*phi[x][y] + phi[x][(y-1+L)%L];
+	fphi[x][y] += (2.0*p.musqr + 4.0*p.lambda*phi[x][y]*phi[x][y]) * phi[x][y];
       }
     
 }
 
 //Update the momenta from the back reaction of the field
-void update_mom(double mom[L][L], double fU[L][L], param p, double dt) {
+void update_mom(double mom[L][L], double fphi[L][L], param p, double dt) {
   
   for(int x=0; x<L; x++)
     for(int y=0; y<L; y++) 
-      mom[x][y] -= fU[x][y] * dt;
+      mom[x][y] -= fphi[x][y] * dt;
   
 }
 
@@ -516,8 +516,8 @@ double calcH(double mom[L][L], double phi[L][L],  param p) {
 //Compute the 'magnetisation' of the phi field
 double measMag(const double phi[L][L]) {
   double mag = 0.0;
-  for(int x =0;x< L;x++)
-    for(int y =0;y< L;y++)
+  for(int x=0; x<L; x++)
+    for(int y=0; y<L; y++)
       mag += phi[x][y];  
   return mag;
 }
@@ -525,8 +525,8 @@ double measMag(const double phi[L][L]) {
 //Compute the absolute value of the phi field
 double measAbsMag(const double phi[L][L]) {
   double mag = 0.0;
-  for(int x =0;x< L;x++)
-    for(int y =0;y< L;y++)
+  for(int x=0; x<L; x++)
+    for(int y=0; y<L; y++)
       mag += fabs(phi[x][y]);  
   return mag;
 }
