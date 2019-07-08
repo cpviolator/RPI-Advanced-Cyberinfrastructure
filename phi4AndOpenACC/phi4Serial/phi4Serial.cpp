@@ -39,7 +39,7 @@ typedef struct{
 void printLattice(const double phi[L][L]);
 void hotStart(double phi[L][L], param p);
 void coldStart(double phi[L][L], param p);
-void gaussReal_F(double mom[L][L]);
+void gaussMom(double mom[L][L]);
 
 //Measurements
 double calcH(double mom[L][L], double phi[L][L],param p);
@@ -399,12 +399,13 @@ int hmc(double phi[L][L], param p, int iter) {
   //Copy the field in case of rejection
   copyField(phiOld, phi);
 
-  //Create gaussian distributed momenta
+  
+  //Step 1: Create gaussian distributed momenta
   double mom[L][L];
   zeroField(mom);  
-  gaussReal_F(mom); 
+  gaussMom(mom); 
 
-  //Perform trajectory
+  //Step 2: Perform trajectory
   Hold = calcH(mom, phi, p);
   trajectory(mom, phi, p); // MD trajectory using Leapfrog
   H = calcH(mom, phi, p);
@@ -415,7 +416,7 @@ int hmc(double phi[L][L], param p, int iter) {
     ave_dH += H-Hold;
   }
   
-  // Metropolis accept/reject step
+  // Step 3: Metropolis accept/reject step
   // Always accepts trajectories during first half of warm up.
   if (drand48() > exp(-(H-Hold)) && iter > p.nTherm/2-1) {    
 
@@ -430,29 +431,30 @@ int hmc(double phi[L][L], param p, int iter) {
   }
 }
 
-//Performs the HMC trajectory via Leapfrog integration
+//Step 2: Performs the HMC trajectory via Leapfrog integration
 void trajectory(double mom[L][L], double phi[L][L], param p) {
 
   const double dt = p.dt;
   double fphi[L][L];
-  //Initial half step:
+  //Step 2.1: Initial half step:
   //P_{1/2} = P_0 - dtau/2 * fphi
   force_phi(fphi, phi, p);
   update_mom(mom, fphi, p, 0.5*dt);
   
+  //Step 2.2:
   for(int k=1; k<p.nStep; k++) {
     
-    //phi_{k} = phi_{k-1} + P_{k-1/2} * dt
+    //phi_{k} = phi_{k-1} + P_{k-1/2} * dtau
     update_phi(phi, mom, p, dt);
     
-    //P_{k+1/2} = P_{k-1/2} - fphi * dt 
+    //P_{k+1/2} = P_{k-1/2} - fphi * dtau
     force_phi(fphi, phi, p);
     update_mom(mom, fphi,  p, dt);
     
   }
   
-  //Final half step.
-  //phi_{n} = phi_{n-1} + P_{n-1/2} * dt
+  //step 2.3: Final half step.
+  //phi_{n} = phi_{n-1} + P_{n-1/2} * dtau
   update_phi(phi, mom, p, dt);
   force_phi(fphi, phi, p);
   update_mom(mom, fphi, p, 0.5*dt);
@@ -562,7 +564,8 @@ void hotStart(double phi[L][L],param p) {
   return;
 }  
 
-void gaussReal_F(double field[L][L]) {
+//Step 1: Gaussian momenta generated here
+void gaussMom(double field[L][L]) {
   //normalized gaussian exp[ - phi*phi/2]  <eta^2> = 1
   double r, theta;
   for(int x=0; x<L; x++)
