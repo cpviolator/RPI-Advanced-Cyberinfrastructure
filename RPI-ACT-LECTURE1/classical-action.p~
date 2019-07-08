@@ -1,0 +1,49 @@
+#set terminal dumb 120 40
+set terminal postscript enhanced color
+set output 'classical-action.eps'
+
+#set xlabel "{/Symbol D}{/Symbol Y}" font ",24"
+#set ylabel "|{/Symbol D}S|" font ",24"
+#set y2label "|{/Symbol Y}^2|" font ",24"
+set xrange [-5:5]
+set yrange [0:10]
+unset border
+unset xtics
+unset ytics
+set key at 4,10
+
+funcPath(x)=4*sqrt(x)
+
+set arrow from -5,0 to 5,0 nohead lc rgb "black"
+set arrow from 0,0 to 0,5 nohead lc rgb "black"
+func1(x)=5*exp(-0.5*x*x)
+func2(x)=0.5*x*x
+
+a=0.25
+set arrow from -5,4*sqrt(a) to 5,4*sqrt(a) nohead lc rgb "black"
+set arrow from a,4*sqrt(a) to a,(5+4*sqrt(a)) nohead lc rgb "black"
+func1a(x)=5*exp(-0.5*(x-a)*(x-a)) + 4*sqrt(a)
+func2a(x)=0.5*(x-a)*(x-a) + 4*sqrt(a)
+
+b=0.7
+set arrow from -5,4*sqrt(b) to 5,4*sqrt(b) nohead lc rgb "black"
+set arrow from b,4*sqrt(b) to b,(5+4*sqrt(b)) nohead lc rgb "black"
+func1b(x)=5*exp(-0.5*(x-b)*(x-b)) + 4*sqrt(b)
+func2b(x)=0.5*(x-b)*(x-b) + 4*sqrt(b)
+
+c=1.2
+set arrow from -5,4*sqrt(c) to 5,4*sqrt(c) nohead lc rgb "black"
+set arrow from c,4*sqrt(c) to c,(5+4*sqrt(c)) nohead lc rgb "black"
+func1c(x)=5*exp(-0.5*(x-c)*(x-c)) + 4*sqrt(c)
+func2c(x)=0.5*(x-c)*(x-c) + 4*sqrt(c)
+
+d=1.5
+set arrow from -5,4*sqrt(d) to 5,4*sqrt(d) nohead lc rgb "black"
+set arrow from d,4*sqrt(d) to d,(5+4*sqrt(d)) nohead lc rgb "black"
+fund1d(x)=5*exp(-0.5*(x-d)*(x-d)) + 4*sqrt(d)
+fund2d(x)=0.5*(x-d)*(x-d) + 4*sqrt(d)
+
+
+#set label sprintf("A=%.6f +/- %.6f\nB=%.6f +/- %.6f\nC=%.6f +/- %.6f\n{/Symbol c}^2=%.6f", A, A_err, B, B_err, C, C_err, FIT_STDFIT*FIT_STDFIT) at 6, 0.6
+
+plot [-5:5] funcPath(x) lt rgb "red" t "classical path", func1(x) lt rgb "blue" t "|{/Symbol Y}^2|", func2(x) lt rgb "green" t "|{/Symbol D}S|", func1a(x) lt rgb "blue" t "", func2a(x) lt rgb "green" t "", func1b(x) lt rgb "blue" t "", func2b(x) lt rgb "green" t "", func1c(x) lt rgb "blue" t "", func2c(x) lt rgb "green" t "", func1d(x) lt rgb "blue" t "", func2d(x) lt rgb "green" t ""
