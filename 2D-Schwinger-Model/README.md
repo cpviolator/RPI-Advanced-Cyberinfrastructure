@@ -24,7 +24,6 @@ the source for further information. We list here the features as a synopsis:
    1. Gauge field saving/loading.
    2. Gauge field smearing (APE)
    3. Linear algebra suite (linAlgHelpers.h)
-   4. ARPACK driven eigensolver
 
 ### Measurements
 
@@ -52,8 +51,4 @@ be easier. In order to constrcut an exectuable, one must edit the 'launcher.sh`
 file with the desired parameters. The 'launcher.sh` script will then construct
 a `Makefile`, a 'main.cpp' file, and an executable, and will then launch the job.
 
-## Dependencies
-
-The sole dependency is from ARPACK and is entirely optional. We have tested
-against macOS Mojave and used `brew install arpack` to build ARPACK, and link
-accordingly.
+Happy hacking!

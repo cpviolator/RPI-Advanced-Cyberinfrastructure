@@ -1,6 +1,19 @@
-//================================================================================= 
-// This is a 2d phi 4th code on a torus desinged to be easy to convet to openACC.
-//=================================================================================
+//=================================================================================== 
+// This is 2D phi^4 code on a torus designed to be easy to converted for openACC.
+//===================================================================================
+
+/*
+v0 additions
+This version is a near straight up copy of the serial version of this routine.
+It is used purely to demonstrate that PGI++ can compile serial code, and to give 
+some timings for:
+
+1. Lattice Percolation
+2. Swendsen Wang cluster decomposition
+3. HMC trajectory
+4. Phi mean and moments
+*/
+
 
 #include <vector>
 #include <tuple>
@@ -63,14 +76,27 @@ void flipSpins(double phi[L][L], const int label[L][L]);
 double ave_expmdH = 0.0;
 double ave_dH = 0.0;
 
+// v0: Global variables for timing
+//--------------------------------------------------------------------------
+double start = 0.0;
+double LPtime = 0.0;
+double SWtime = 0.0;
+double HMCtime = 0.0;
+double PhiMtime = 0.0;
+
+#include <sys/time.h>
+inline double get_time() {
+  
+  struct timeval tv;
+  struct timezone tz;
+  gettimeofday(&tv, &tz);
+  return 1.0*tv.tv_sec+1.0E-6*tv.tv_usec;
+
+}
+
+
 // Inlined Utilities
 //--------------------------------------------------------------------------
-// Zero lattice field.
-template<typename T> inline void zeroField(T phi[L][L]) {
-  for(int x=0; x<L; x++)
-    for(int y=0; y<L; y++)
-      phi[x][y] = 0.0;
-}
 
 // Copy lattice field
 template<typename T> inline void copyField(T phi2[L][L],T phi1[L][L]) {
@@ -84,6 +110,8 @@ template<typename T> inline void copyField(T phi2[L][L],T phi1[L][L]) {
 
 int main(int argc, char **argv) {
   
+  double prog_start = get_time();
+
   param p;
   p.Latsize = L;
   p.lambda = 0.125; 
@@ -134,11 +162,6 @@ int main(int argc, char **argv) {
   double vol2= vol*vol;
   double vol4= vol*vol*vol*vol;
   
-  double momZero[L][L];
-  zeroField(momZero);
-
-
-  
   //--------------------------------------------------------------------------
   // Thermalise the field. This evolves the phi field
   // from a completely random (hot start)
@@ -154,7 +177,7 @@ int main(int argc, char **argv) {
     for(int relax = 0; relax < p.relaxIter && !stop; relax++) {
       stop = swendsenWang(label, bond);
       if(stop) {
-	//Lattice bonds identified. Flip 'em!
+	//Lattice clusters identified. Flip 'em!
 	flipSpins(phi, label);
 	if(p.debug) cout << "Iter " << iter << ": relaxation sweeps: " << relax << endl; 
       }
@@ -185,7 +208,7 @@ int main(int argc, char **argv) {
     for(int relax = 0; relax < p.relaxIter && !stop; relax++) {
       stop = swendsenWang(label, bond);
       if(stop) {
-	//Lattice bonds identified. Flip 'em!
+	//Lattice clusters identified. Flip 'em!
 	flipSpins(phi, label);
 	if(p.debug) cout << "Iter " << iter << ": relaxation sweeps: " << relax << endl; 
       }
@@ -203,6 +226,8 @@ int main(int argc, char **argv) {
       
       //Get phi mean and moments
       //------------------------------------------------------------------------
+      start = get_time();
+
       AbsPhi += measAbsMag(phi);
       
       getMag = measMag(phi);
@@ -217,6 +242,7 @@ int main(int argc, char **argv) {
       double avPhi = Phi/measurement;
       double avPhi2 = Phi2/measurement;
       double avPhi4 = Phi4/measurement;
+      PhiMtime += get_time() - start;
       //--------------------------------------------------------------------------
 
       // Diagnostics and observables
@@ -237,9 +263,11 @@ int main(int argc, char **argv) {
 	cout << "MEAS <phi**2>       = " << setprecision(12) << avPhi2/vol2 << endl;
 	cout << "MEAS <phi**4>       = " << setprecision(12) << avPhi4/vol4 << endl;
 	cout << "Binder Cumulant     = " << setprecision(12) << 1.0 - Phi4/(3.0*Phi2*Phi2/measurement) << endl;
+	
       }
+      cout << "Timings: LP=" << LPtime << " SW=" << SWtime << " HMC=" << HMCtime << " PhiM=" << PhiMtime << " Total=" << get_time() - prog_start << endl; 
       //--------------------------------------------------------------------------
-
+      
       // Dump data to file
       //--------------------------------------------------------------------------
       string filename;
@@ -274,6 +302,8 @@ int main(int argc, char **argv) {
 //----------------------------------------------------------------------------
 // Identify the bond structure of the Swendsen-Wang decomposition.
 void latticePercolate(bool bond[L][L][4], int label[L][L], const double phi[L][L]) {
+
+  start = get_time();
   
   double probability; 
 
@@ -306,6 +336,8 @@ void latticePercolate(bool bond[L][L][4], int label[L][L], const double phi[L][L
       if(drand48() < 0.5) label[x][y] = - (y + x*L + 1);
       else label[x][y] = (y + x*L + 1);
     }
+
+  LPtime += get_time() - start;
   return;
 }
 
@@ -318,6 +350,8 @@ void latticePercolate(bool bond[L][L][4], int label[L][L], const double phi[L][L
 //bond structure) will have a label unique to the cluster, equal to the
 //smallest lexicographic coordinate in that cluster.
 bool swendsenWang(int label[L][L], const bool bond[L][L][4]) {
+
+  start = get_time();
   
   bool stop = true;
   int newlabel[L][L];
@@ -355,7 +389,9 @@ bool swendsenWang(int label[L][L], const bool bond[L][L][4]) {
   for(int x = 0; x< L; x++)
     for(int y = 0; y< L; y++)
       label[x][y] = newlabel[x][y];
-  
+
+  SWtime += get_time() - start;
+
   return stop;
 }
 
@@ -363,11 +399,15 @@ bool swendsenWang(int label[L][L], const bool bond[L][L][4]) {
 //coordinate phi value. We randomly placed a minus sign on the label
 //which will now serve as a 50/50 test to flip the entire cluster
 void flipSpins(double phi[L][L], const int label[L][L]) {
+
+  start = get_time();
   
   for(int x=0; x<L; x++)
-    for(int y=0; y<L; y++) {
+    for(int y=0; y<L; y++) 
       if(label[x][y] < 0) phi[x][y] = -phi[x][y];
-    }  
+  
+  SWtime += get_time() - start;
+  
   return;
 }
 
@@ -392,6 +432,8 @@ void flipSpins(double phi[L][L], const int label[L][L]) {
 //    candidate configurations. (CLASS THOUGHT EXPERIMENT)
 
 int hmc(double phi[L][L], param p, int iter) {
+
+  start = get_time();
   
   double phiOld[L][L];
   double H = 0.0, Hold = 0.0;
@@ -401,7 +443,6 @@ int hmc(double phi[L][L], param p, int iter) {
 
   //Create gaussian distributed momenta
   double mom[L][L];
-  zeroField(mom);  
   gaussReal_F(mom); 
 
   //Perform trajectory
@@ -417,17 +458,18 @@ int hmc(double phi[L][L], param p, int iter) {
   
   // Metropolis accept/reject step
   // Always accepts trajectories during first half of warm up.
-  if (drand48() > exp(-(H-Hold)) && iter > p.nTherm/2-1) {    
-
+  if (drand48() > exp(-(H-Hold)) && iter > p.nTherm/2-1) {
     //Keep old field
     copyField(phi, phiOld);
+    HMCtime += get_time() - start;
     return 0;
   }
-  else {
-    
+  else {    
     //Accept candidate field
+    HMCtime += get_time() - start;
     return 1;
   }
+
 }
 
 //Performs the HMC trajectory via Leapfrog integration
