@@ -5,30 +5,12 @@
 # to make writing new code simpler. Please please edit and remake
 # if you wish to vary L.
 
-#edit this path to be the location of your source code
-SRC=/Users/deanhowarth/RPI-github/2D-Schwinger-Model
-
-# configure preamble
-#---------------------------------------------------------------
-LX=16
-LY=32
-# Construct the correct executable
-cp ${SRC}/wilson/main.cpp main.cpp
-cp ${SRC}/wilson/Makefile Makefile
-
-sed -i '.bak' -e s/__LX__/${LX}/g main.cpp Makefile
-sed -i '.bak' -e s/__LY__/${LY}/g main.cpp Makefile
-sed -i '.bak' -e s/__SRC__/${SRC}/g Makefile
-
-rm *.bak
-make
-
 #create directories for data
 mkdir -p {gauge,data/{data,creutz,polyakov,rect,top,pion,vacuum}}
 #---------------------------------------------------------------
 
 # The value of the coupling in the U(1) 2D theory
-BETA=$1
+BETA=4.0
 
 # The total number of HMC iterations to perform.
 HMC_ITER=10000
@@ -53,8 +35,8 @@ APE_ALPHA=0.5
 # The RNG seed
 RNG_SEED=1234
 
-# DYNAMIC (1) or QUENCHED (0)
-DYN_QUENCH=1
+# DYNAMIC (true) or QUENCHED (false)
+DYN_QUENCH='true'
 
 # Lock the Z gauge to unit (1) or allow z dynamics (0)
 ZLOCKED=1
@@ -67,33 +49,34 @@ MAX_CG_ITER=1000
 # CG tolerance
 CG_EPS=1e-16
 
-# Eigensolver parameters
-# Tolerance on the residual
-TOL=1e-8
-# Maximum ARPACK iterations
-ARPACK_MAXITER=100000
-
-#polyACC (experimental)
-USE_ACC=0
-AMAX=11
-AMIN=1.0
-N_POLY=100
-
-# Measuremets: 1 = measure, 0 = no measure
 # Polyakov loops
-MEAS_PL=1
+MEAS_PL=true
 # Wilson loops and Creutz ratios
-MEAS_WL=1
+MEAS_WL=true
 # Pion Correlation function
-MEAS_PC=1
+MEAS_PC=true
 # Vacuum trace
-MEAS_VT=0
+MEAS_VT=false
 
 #construct command 
-command="./2D-Wilson-LX$LX-LY$LY $BETA $HMC_ITER $HMC_THERM $HMC_SKIP $HMC_CHKPT 
-         $HMC_CHKPT_START $HMC_NSTEP $HMC_TAU $APE_ITER $APE_ALPHA $RNG_SEED 
-	 $DYN_QUENCH $MASS $MAX_CG_ITER $CG_EPS $TOL $ARPACK_MAXITER $USE_ACC $AMAX 
-    	 $AMIN $N_POLY $MEAS_PL $MEAS_WL $MEAS_PC $MEAS_VT $PULSE"
+command="./2D-Wilson --beta ${BETA} \
+		     --iterHMC ${HMC_ITER} \
+		     --therm ${HMC_THERM} \
+		     --skip ${HMC_SKIP} \
+		     --checkpoint ${HMC_CHKPT} \
+		     --checkpointStart ${HMC_CHKPT_START} \
+		     --nSteps ${HMC_NSTEP} \
+		     --tau ${HMC_TAU} \
+                     --smearIter ${APE_ITER} \
+		     --smearAlpha ${APE_ALPHA} \
+	 	     --dynamic ${DYN_QUENCH} \
+		     --mass ${MASS} \
+		     --tol ${CG_EPS} \
+		     --maxIterCG ${MAX_CG_ITER} \
+		     --measPL ${MEAS_PL} \
+		     --measWL ${MEAS_WL} \
+		     --measPC ${MEAS_PC} \
+		     --measVT ${MEAS_VT}"
 
 #echo to stdout for reference
 echo $command

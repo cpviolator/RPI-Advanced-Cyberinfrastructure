@@ -1,5 +1,5 @@
 #============================================================
-SRC=/Users/deanhowarth/RPI-github/2D-Schwinger-Model
+SRC=/Users/deanhowarth/RPI-Advanced-Cyberinfrastructure/2D-Schwinger-Model
 TARGET  = 2D-Wilson
 SOURCES = main.cpp
 OBJS    = main.o

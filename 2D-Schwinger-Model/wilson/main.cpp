@@ -7,8 +7,8 @@
 
 using namespace std;
 
-#define LX 32
-#define LY 32
+#define LX 48
+#define LY 48
 #define D 2
 #define PI 3.141592653589793
 #define TWO_PI 6.283185307179586
@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
     if(init(argc, argv, &i, &p) == 0){
       continue;
     }
-    printf("ERROR: Invalid option : %s\n", argv[i-1]);
+    printf("ERROR: Invalid option : %s\n", argv[i]);
     usage(argv);
     exit(0);
   }

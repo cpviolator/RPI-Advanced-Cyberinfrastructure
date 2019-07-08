@@ -290,7 +290,7 @@ void usage(char **argv) {
 
   //HMC params
   //------------------------------------------------------------------------
-  printf("--nStep <int>           The number of leapfrog steps in the HMC.\n");
+  printf("--nSteps <int>          The number of leapfrog steps in the HMC.\n");
   printf("--tau <double>          The length of the HMC trajectory.\n");
   printf("--iterHMC <int>         The number of HMC trajectories to compute.\n");
   printf("--therm <int>           The number of HMC trajectories the thermalise.\n");
@@ -298,7 +298,7 @@ void usage(char **argv) {
   printf("--checkpoint <int>      Save the gauge field every <checkpoint>th HMC iter.\n");
   printf("--checkpointStart <int> Start the HMC from this trajectory.\n");
   printf("--maxIterCG <int>       The maximum number of iteratons CG will run.");
-  printf("--tolCG <double>        Desired residual norm of CG solver.\n");
+  printf("--tol <double>          Desired residual norm of CG solver.\n");
   
   //Physics
   //------------------------------------------------------------------------
@@ -313,6 +313,7 @@ void usage(char **argv) {
   printf("--measPL <true/false>   Measure Polyakov loops.\n");
   printf("--measWL <true/false>   Measure Wilson loops.\n");
   printf("--measPC <true/false>   Measure Pion correlation.\n");
+  printf("--measVT <true/false>   Measure vacuum trace tr[M^-1].\n");
   
 }
 
@@ -427,7 +428,18 @@ int init(int argc, char **argv, int *idx, param_t *p) {
     ret = 0;
     goto out;
   }
-  
+
+  if( strcmp(argv[i], "--tol") == 0){
+    if (i+1 >= argc){
+      usage(argv);
+    }
+    
+    p->eps = atof(argv[i+1]);
+    i++;
+    ret = 0;
+    goto out;
+  }
+
   if( strcmp(argv[i], "--mass") == 0){
     if (i+1 >= argc){
       usage(argv);
@@ -538,6 +550,24 @@ int init(int argc, char **argv, int *idx, param_t *p) {
     goto out;
   }
   
+  if( strcmp(argv[i], "--measVT") == 0){
+    if (i+1 >= argc){
+      usage(argv);
+    }
+
+    if (strcmp(argv[i+1], "true") == 0){
+      p->measVT = true;
+    }else if (strcmp(argv[i+1], "false") == 0){
+      p->measVT = false;
+    }else{
+      fprintf(stderr, "ERROR: invalid measVT type (true/false)\n");
+      exit(1);
+    }
+    
+    i++;
+    ret = 0;
+    goto out;
+  }
   
   
  out:
