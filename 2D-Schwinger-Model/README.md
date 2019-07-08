@@ -38,17 +38,26 @@ At the preset time, one may measure
 
 ### Usage
 
-In each (Action/Dimension) directory we provide four files:
+In the `wilson` directory we provide two files,
 
-   Makefile_template
-   main_template.cpp
-   looper.sh
-   launcher.sh.
+   Makefile
+   main.cpp
+
+and in the `scripts` directory there is a launching script,
+
+   launcher.sh
 
 We have deliberatly left some parameters of the code as preprocessor defines.
 This is so that any attempt to parallelise the code with, say OpenACC, will
-be easier. In order to constrcut an exectuable, one must edit the 'launcher.sh`
-file with the desired parameters. The 'launcher.sh` script will then construct
-a `Makefile`, a 'main.cpp' file, and an executable, and will then launch the job.
+be easier. In order to constrcut an exectuable, edit the `main.cpp` file so
+that it has the size that you desire, and type `make`. Then, edit the 
+`launcher.sh` script to suit your run-time paramters.
+
+Notice that the launcher script creates directories. The executable will expect
+these dorectories to exist, and will bork hard if they are not there.
+
+Make sure you make the `launcher.sh` script executable:
+
+`chmod +x launcher.sh`
 
 Happy hacking!
