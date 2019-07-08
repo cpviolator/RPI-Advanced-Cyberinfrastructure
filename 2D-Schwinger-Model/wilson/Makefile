@@ -1,9 +1,8 @@
 #============================================================
-SRC=/Users/deanhowarth/RPI-Advanced-Cyberinfrastructure/2D-Schwinger-Model
 TARGET  = 2D-Wilson
 SOURCES = main.cpp
 OBJS    = main.o
-INC_PATH=${SRC}/include
+INC_PATH=../include
 
 CXX=g++
 CXXFLAGS = -O3 -g -std=c++11 -I${INC_PATH}

@@ -60,4 +60,4 @@ Make sure you make the `launcher.sh` script executable:
 
 `chmod +x launcher.sh`
 
-Happy hacking!
+Happy Hacking!

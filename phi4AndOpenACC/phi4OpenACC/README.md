@@ -2,20 +2,27 @@
 
 ## Features
 
-This code contains many of the structures one might expect to find in a finite element
-field theory computation. We list the features here and place more elaborate
-explanations in the code itself.
+This code is a series of evolutions of `phi4Serial.cpp`:
 
-1. Hybrid Monte-Carlo
-2. Swendsen-Wang cluster decomposition
-3. Moment of phi measurements
+v0. The same phi4Serial code, with timings.
+v1. All of the HMC routines are parallelised with OpenACC
+v2. Most of the Swendsen-Wang cluster routines are parallelised
+    with OpenACC
+v3. Up to you!
 
 ## Using the code.
 
-All of the variables are hardcoded for ease of development. Physical and algorithmic
-variables such as \lambda, \musqr are defined the paramater structure, and can be
-changed in the *main* file. The square lattice size L is a #define at line 17
+The make file has four different compiler variations:
 
-To compile, simply type make in the source directory, and run with ./phi4Serial
+1. g++
+2. pgi++
+3. pgi++ with multicore
+4. pgi++ with tesla
+
+You must edit the makefile (uncomment the desired line) to invoke the compiler
+
+There are four targets; `v0`, `v1`, `v2`, `v3`. Entering `make all` will 
+make all four. Entering `make v0` will make just `v0`, and so on. Each 
+compiler and each version will give a different exectuable.
 
 Happy Hacking!
