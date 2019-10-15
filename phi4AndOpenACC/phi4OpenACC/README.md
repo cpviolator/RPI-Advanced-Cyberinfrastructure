@@ -6,9 +6,8 @@ This code is a series of evolutions of `phi4Serial.cpp`:
 
 1. v0 The same phi4Serial code, with timings.
 2. v1 All of the HMC routines are parallelised with OpenACC
-3. v2 Most of the Swendsen-Wang cluster routines are parallelised
-      with OpenACC
-v3. Up to you!
+3. v2 Most of the Swendsen-Wang cluster routines are parallelised with OpenACC
+4. v3. Up to you!
 
 ## Using the code.
 
