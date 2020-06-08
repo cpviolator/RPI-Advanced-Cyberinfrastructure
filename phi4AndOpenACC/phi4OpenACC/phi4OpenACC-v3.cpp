@@ -99,7 +99,7 @@ using namespace std;
 #endif
  
 #define TWO_PI 6.283185307179586
-#define L 64
+#define L 128
 
 // Parameter structure
 //--------------------------------------------------------------------------
@@ -201,10 +201,10 @@ int main(int argc, char **argv) {
   p.nStep = 15;
   p.tau = 1.0;
   p.dt = p.tau/p.nStep;
-  p.nTherm = 1000;
-  p.nIter = 100000;
-  p.nMeas = 25;
-  p.nHMC = 10;
+  p.nTherm = 100;
+  p.nIter = 100;
+  p.nMeas = 10;
+  p.nHMC = 5;
   p.verbose = true;
   p.debug = false;
   p.seed = 1234;
@@ -283,6 +283,8 @@ int main(int argc, char **argv) {
 
 	if(stop) {
 	  //Lattice clusters identified. Flip 'em!
+	  //Copy the labels from the device to the host
+#pragma acc update self (label[0:L][0:L])
 	  flipSpins(phi, label);
 	  if(p.debug) {
 	    cout << "Iter " << iter << ": relaxation sweeps: " << relax << endl;
@@ -327,6 +329,8 @@ int main(int argc, char **argv) {
 
 	if(stop) {
 	  //Lattice clusters identified. Flip 'em!
+	  //Copy the labels from the device to the host
+#pragma acc update self (label[0:L][0:L])
 	  ave_relax += relax + p.relaxInit;
 	  flipSpins(phi, label);
 	  if(p.debug) {
@@ -454,7 +458,7 @@ void latticePercolate(bool bond[L][L][4], int label[L][L], const double phi[L][L
       rands3[x][y] = drand48();
     }
   
-#pragma acc update device (bond[0:L][0:L][0:4], label[0:L][0:L])
+  //#pragma acc update device (bond[0:L][0:L][0:4], label[0:L][0:L])
 
   //v2: Notice that rands arrays are 'copied in' only. We don't care about the
   //    data they contain once we're done with the function.
@@ -495,7 +499,7 @@ void latticePercolate(bool bond[L][L][4], int label[L][L], const double phi[L][L
   }
   
   //Ensure to update the bond and label array for host side testing.
-#pragma acc update self (bond[0:L][0:L][0:4], label[0:L][0:L])
+  //#pragma acc update self (bond[0:L][0:L][0:4], label[0:L][0:L])
 
   LPtime += get_time() - start;
   return;
@@ -567,40 +571,69 @@ bool swendsenWangStopTest(int label[L][L], const bool bond[L][L][4]) {
   
   bool stop = true;
   int newlabel[L][L];
-  int minLabel;
+  int stop_bool[L][L];
   
-  for(int x=0; x<L; x++)
-    for(int y=0; y<L; y++) {
+#pragma acc data present(bond[0:L][0:L][0:4], label[0:L][0:L]) create(newlabel[0:L][0:L], stop_bool[0:L][0:L])
+  {
+    // Set stop_bool to zero
+#pragma acc parallel loop collapse(2)
+    for(int x=0; x<L; x++)
+      for(int y=0; y<L; y++)
+	stop_bool[x][y] = 0;
+    
+    int minLabel;
+    // Loop over all lattice points. If the cluster is not yet identifed, 
+    // a label will propagate and we must press on with Swendsen-Wang
+#pragma acc parallel loop collapse(2)
+    for(int x=0; x<L; x++)
+      for(int y=0; y<L; y++) {
+	
+	minLabel = label[x][y];  
+	
+	if( bond[x][y][0] && (abs(minLabel) > abs(label[(x+1)%L][y])) ) {
+	  minLabel = label[(x+1)%L][y];
+	  //stop = false;
+	  stop_bool[x][y]++;
+	}
+	
+	if( bond[x][y][1] && (abs(minLabel) > abs(label[x][(y+1)%L])) ) {
+	  minLabel = label[x][(y+1)%L];
+	  //stop = false;
+	  stop_bool[x][y]++;
+	}
+	
+	if( bond[x][y][2] && (abs(minLabel) > abs(label[(x-1 + L)%L][y])) ) {
+	  minLabel = label[(x-1 + L)%L][y];
+	  //stop = false;
+	  stop_bool[x][y]++;
+	}
+	
+	if( bond[x][y][3] && (abs(minLabel) > abs(label[x][(y-1 + L)%L])) ) {
+	  minLabel = label[x][(y-1 + L)%L];
+	  //stop = false;
+	  stop_bool[x][y]++;
+	}      
+	newlabel[x][y] =  minLabel;
+      }
+    
+#pragma acc parallel loop collapse(2)
+    //After sweeping through the lattice, update all the cluster labels 
+    for(int x = 0; x< L; x++)
+      for(int y = 0; y< L; y++)
+	label[x][y] = newlabel[x][y];
 
-      minLabel = label[x][y];  
-      
-      if( bond[x][y][0] && (abs(minLabel) > abs(label[(x+1)%L][y])) ) {
-	minLabel = label[(x+1)%L][y];
-	stop = false;
-      }
-      
-      if( bond[x][y][1] && (abs(minLabel) > abs(label[x][(y+1)%L])) ) {
-	minLabel = label[x][(y+1)%L];
-	stop = false;
-      }
-      
-      if( bond[x][y][2] && (abs(minLabel) > abs(label[(x-1 + L)%L][y])) ) {
-	minLabel = label[(x-1 + L)%L][y];
-	stop = false;
-      }
-      
-      if( bond[x][y][3] && (abs(minLabel) > abs(label[x][(y-1 + L)%L])) ) {
-	minLabel = label[x][(y-1 + L)%L];
-	stop = false;
-      }      
-      newlabel[x][y] =  minLabel;
-    }
+    int stop_bool_sum = 0;
+#pragma acc parallel loop reduction(+:stop_bool_sum)
+    //If a cluster label propagated, the stop_bool array will have 
+    //a non-zer value. We sum the array, and if the sun is non-zero
+    //we must continue teh search
+    for(int x = 0; x< L; x++)
+      for(int y = 0; y< L; y++)
+	stop_bool_sum += stop_bool[x][y];
+    
+    if(stop_bool_sum > 0) stop = false;    
+  }
   
-  //After sweeping through the lattice, update all the cluster labels 
-  for(int x = 0; x< L; x++)
-    for(int y = 0; y< L; y++)
-      label[x][y] = newlabel[x][y];
-
   SWtime += get_time() - start;
 
   return stop;

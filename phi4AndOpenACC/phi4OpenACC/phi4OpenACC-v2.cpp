@@ -92,7 +92,7 @@ using namespace std;
 #endif
  
 #define TWO_PI 6.283185307179586
-#define L 64
+#define L 128
 
 // Parameter structure
 //--------------------------------------------------------------------------
@@ -194,16 +194,16 @@ int main(int argc, char **argv) {
   p.nStep = 15;
   p.tau = 1.0;
   p.dt = p.tau/p.nStep;
-  p.nTherm = 1000;
-  p.nIter = 10000;
-  p.nMeas = 25;
-  p.nHMC = 10;
+  p.nTherm = 100;
+  p.nIter = 100;
+  p.nMeas = 10;
+  p.nHMC = 5;
   p.verbose = true;
   p.debug = false;
   p.seed = 1234;
   p.relaxIter = 10000;
   //v2: New parameters
-  p.relaxInit = 400;
+  p.relaxInit = 1000;
   p.relaxLoops = 50;
   srand(p.seed);
 
