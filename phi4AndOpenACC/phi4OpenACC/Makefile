@@ -12,13 +12,13 @@ ifeq ($(ACCEL_TYPE),GPP)
         CXX=g++
         CXXFLAGS += -std=c++11 -O3 -DGPP_BUILD
 else ifeq ($(ACCEL_TYPE),PGI)
-        CXXFLAGS += -fast
+        CXXFLAGS += -std=c++11 -fast
         TARGET=phi4OpenACC_exe
 else ifeq ($(ACCEL_TYPE),PGI-tesla)
-        CXXFLAGS += -Minfo=accel -fast -O3 -acc -ta=tesla:fastmath -ta:tesla:fma -ta=tesla:cc60 -DGPU
+        CXXFLAGS += -std=c++11 -Minfo=accel --fast -O3 -acc -ta=tesla:fastmath -ta:tesla:fma -ta=tesla:cc60 -DGPU
         TARGET=phi4OpenACC-tesla_exe
 else ifeq ($(ACCEL_TYPE),PGI-multicore)
-        CXXFLAGS += -Minfo=accel -fast -acc -ta=multicore
+        CXXFLAGS += -std=c++11 -Minfo=accel -fast -acc -ta=multicore
         TARGET=phi4OpenACC-multicore_exe
 endif
 #============================================================
