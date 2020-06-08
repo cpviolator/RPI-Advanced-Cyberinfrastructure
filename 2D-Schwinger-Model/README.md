@@ -54,7 +54,7 @@ that it has the size that you desire, and type `make`. Then, edit the
 `launcher.sh` script to suit your run-time paramters.
 
 Notice that the launcher script creates directories. The executable will expect
-these dorectories to exist, and will bork hard if they are not there.
+these directories to exist, and will hard bork if they are not there.
 
 Make sure you make the `launcher.sh` script executable:
 

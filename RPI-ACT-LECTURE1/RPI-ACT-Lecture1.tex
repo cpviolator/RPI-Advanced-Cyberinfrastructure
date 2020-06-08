@@ -38,13 +38,13 @@
 \item We need a concrete physical model to use: 2D $\phi^4$
 \item Within the 2D $\phi^4$ code are some important algorithms (HMC, cluster decomposition)
 \item Identify opportunities for parallelism
-\item Use OpenACC and pgi++ to exploit those opportunities.
+\item Use OpenACC and PGI++ to exploit those opportunities.
 \item Inspect our optimisations using profiling tools, gain insights into further progress
-\item Apply all of the above to an different code.
+\item Apply all of the above to your code.
 \end{enumerate}\
 }
 
-\section{2D $\phi^4$ theory and its discrete analogue (Lecture)} 
+\section{2D $\phi^4$ theory and its discrete analogue (Lecture 1: Physics First -- anon)} 
 \frame{\frametitle{Why study 2D $\phi^4$ theory?}
 \begin{enumerate}
 \item We know all the answers! Same universality class as 2D Ising model
@@ -62,6 +62,7 @@
 \end{enumerate}\
 }
 
+\subsection{Path Integrals and field theories}
 \frame{\frametitle{Path Integrals: A lightning tour}
 \includegraphics[width=1.0\columnwidth]{path1}
 }
@@ -75,7 +76,7 @@
 }
 
 \frame{\frametitle{Path Integrals: A lightning tour}
-Each path contributes an amplitude (weight) to the final answer. The further away from the classical path, the less weight is given to the path. These weights are given by a path integral.
+Each path contributes an amplitude (weight) to the final answer. The further away from the classical path, the less weight is given to the path. These weights are combined into `path integral`
 \begin{align}
 \langle \phi^2\rangle&=\frac{\int D\phi exp(iS[\phi])\phi^2}{\int D\phi exp(iS[\phi])}\nonumber
 \end{align}
@@ -85,6 +86,45 @@ S(\phi)&=\int dx^2 \mathcal{L}(x)\nonumber\\
 \mathcal{L}(x)&=\frac{1}{2}(\nabla\phi(x))^2 - \frac{1}{2}m^2\phi^2(x) - \frac{1}{4!}\lambda\phi^4(x)\quad x=(x,t)\nonumber
 \end{align}
 }
+
+\subsection{2D $\phi^4$: The Physics} 
+\frame{\frametitle{Universality Class} 
+2D $\phi^4$ theory and the 2D Ising Model are in the same  \href{https://en.wikipedia.org/wiki/Universality_class}{universality class}. This means that under the process of renormalisation group flow, the are exactly the same model.\\
+What does this mean?\\
+\begin{itemize}
+\item At the small (local) scale, the models can be wildly different. At the infinite scale, they are indistinguishable. 
+\item They share the same critical exponents.
+\item At criticality, the model loses all notions of distance. We say that the correlation length goes to infinity.
+\end{itemize}
+}
+ 
+\frame{\frametitle{Criticality} 
+\center \includegraphics[width=0.75\columnwidth]{criticality.png}
+}
+
+\frame{\frametitle{Criticality} 
+\begin{itemize}
+\item There are two phases in this universality class: Ordered, and Disordered. Between the two phases, it is critical.
+\item Special types of quantum field theories have no scale: conformal field theories. The conformal field theory governing this class known as the (4,3) minimal model.
+\item The precise nature of the conformal field theory governing the 3D model is not known. Conformal Bootstrap methods (as well as Monte Carlo methods) are narrowing the parameter space.
+\end{itemize}
+}
+
+\frame{\frametitle{Observables} 
+\begin{itemize}
+\item All of the physical observables are derived from `moments` of the distribution of $\phi$: $\langle \phi \rangle$, $\langle \phi^2 \rangle$, and $\langle \phi^4 \rangle$, with $|\phi|$ thrown in for good measure.
+\item An observable of particular interest is the Binder cumulant: $1.0 - \frac{\langle \phi^4 \rangle}{3.0\langle \phi^2\rangle^2}$
+\end{itemize}
+}
+
+\frame{\frametitle{Binder Cumulant: Kari Rummukainen's notes} 
+\center \includegraphics[width=0.9\columnwidth]{binder1.png}
+}
+
+\frame{\frametitle{Binder Cumulant: Kari Rummukainen's notes } 
+\center \includegraphics[width=0.9\columnwidth]{binder2.png}
+}
+
 
 \frame{\frametitle{Markov Chains}
 What happens when one can't solve the path integral? How does one simulate a quantum field theory? Probabilistically.\\
@@ -121,7 +161,7 @@ If you Google "Hybrid Monte-Carlo and Importance sampling" you will be occupied 
 \end{align}
 \item Fictitious momenta: noise with zero mean
 \begin{align}
-\langle \phi^2\rangle_E&=\frac{\int D\phi exp(-\frac{1}{2}\pi^2-S_E[\phi])\phi^2}{\int D\phi exp(-\frac{1}{2}]\pi^2-S_E[\phi])}\nonumber
+\langle \phi^2\rangle_E&=\frac{\int D\phi exp(-\frac{1}{2}\pi^2-S_E[\phi])\phi^2}{\int D\phi exp(-\frac{1}{2}\pi^2-S_E[\phi])}\nonumber
 \end{align}
 \item Fictitious hamiltonian: field evolution through an extra dimension
 \begin{align}
@@ -178,10 +218,6 @@ This is why the we call it the `action potential'...
 \center \includegraphics[angle=270, width=0.75\columnwidth]{classical-action.pdf}
 }
 
-\frame{\frametitle{HMC is its own thang}
-\center \includegraphics[width=0.50\columnwidth]{anyQuestions}
-}
-
 \frame{\frametitle{Cluster Algorithms}
 Cluster decomposition of $\phi^4$ theory can lead to some staggeringly efficient evolution algorithms. It was pioneered by Fortuin and Kasteleyn in the late 60s. Omitting the gory details, one can write the partition function of a lattice theory as the sum of all possible clusters. One constructs such clusters with a probability,
 \begin{align}
@@ -206,7 +242,9 @@ Wolff:
 You have been provided with notes on the Wolff algorithm, and code for the Swendsen-Wang. Can you write a Wolff cluster algorithm in the activity time?
 }
 
-\section{2D $\phi^4$ with PGI++ (Code Review)} 
+
+
+\section{2D $\phi^4$ with PGI++ (Lecture 2: Code Review)} 
 \frame{\frametitle{The serial implementation} 
 Provided under\\{\fontfamily{<pcr>}\selectfont RPI-Advanced-Cyberinfrastructure/phi4AndOpenACC/phi4Serial}\\
 is a set of routines that perform HMC on a $\phi^4$ theory. Let's read through the code and understand it before using PGI++.\\
@@ -225,6 +263,35 @@ PGI++ is an OpenACC compiler. It is able to compile C++ standard code, along wit
 A pragma is a `hint' or `directive' to the compiler. In the above excerpt, we have informed the compiler that the (2) nested loop may be collapsed. I.e., each iteration is independent. 
 }
 
+\frame{\frametitle{OpenACC Vs OpenMP}
+\begin{itemize}
+\item OpenMP is a large collection of specific directives to the compiler. You can make a program highly optimal for one architecture, but it could be hopelessly poor on another.
+\item OpenACC is much leaner. The compiler makes a lot of decisions "under the hood" and it's up to the programmer to make sure there are no race conditions.
+\item This lecture is about making simple code go faster without having to study hardware architecture diagrams. OpenACC gets us to where we want to be in quick order.
+\item C++ (17) is moving more towards accepting parallelism. The new pSTL library allows programmers to express parallelism in their STL calls, E.g., sum, copy. Code written in the future will have parallel directives built in: The user won't even know their code was parallelised!
+\end{itemize}
+}
+
+\frame{\frametitle{Some Notes on GPU parallelism Vs CPU parallelsim}
+\begin{itemize}
+\item CPU parallelism is straightforward: 
+	\begin{itemize}
+	\item Do more things with more CPUs!
+	\item No issues with moving data around, but usually there are only O(100) cores on a compute node.
+	\item Very few situations where a parallel CPU application doesn't give speed up.
+	\end{itemize}		
+\item GPU parallelism is more involved:
+	\begin{itemize}
+	\item Device memory constraints.
+	\item GPU bandwidth constraints
+	\item Shared memory / block and thread geometry
+	\item Sometimes GPU parallelising isn't worth the overhead.
+	\end{itemize}
+\end{itemize}
+}
+
+
+
 \frame{\frametitle{Using OpenACC and PGI++}
 We are going to learn OpenACC by example. Having seen and understood some serial code, we shall add OpenACC pragmas where relevant and explain each addition in context.
 \begin{itemize}
@@ -232,7 +299,7 @@ We are going to learn OpenACC by example. Having seen and understood some serial
 \item v1: Lots of OpenACC additions to the HMC.
 \item v2: More OpenACC in the cluster decomposition.
 {\center ACTIVITY CHALLENGES}
-\item v3: Can you write a Wolff algorithm? Can you make the HMC more efficient? Can you write a two-point correlation function measurement $\langle \phi(x)\phi(y) \rangle$ and make it run at nosebleed speed?
+\item v3: Can you write a Wolff algorithm? Can you make the HMC more efficient? Can you write a two-point correlation function measurement $\langle \phi(x)\phi(y) \rangle$ and make it run at nosebleed speed? Can you implement a GPU based RNG?
 \center{Ask questions, work in groups, read the code comments, happy hacking!}
 \end{itemize}
 }
