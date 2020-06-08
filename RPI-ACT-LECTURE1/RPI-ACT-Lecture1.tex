@@ -38,7 +38,7 @@
 \item We need a concrete physical model to use: 2D $\phi^4$
 \item Within the 2D $\phi^4$ code are some important algorithms (HMC, cluster decomposition)
 \item Identify opportunities for parallelism
-\item Use OpenACC and pgi++ to exploit those opportunities.
+\item Use OpenACC and PGI++ to exploit those opportunities.
 \item Inspect our optimisations using profiling tools, gain insights into further progress
 \item Apply all of the above to your code.
 \end{enumerate}\
@@ -271,6 +271,25 @@ A pragma is a `hint' or `directive' to the compiler. In the above excerpt, we ha
 \item C++ (17) is moving more towards accepting parallelism. The new pSTL library allows programmers to express parallelism in their STL calls, E.g., sum, copy. Code written in the future will have parallel directives built in: The user won't even know their code was parallelised!
 \end{itemize}
 }
+
+\frame{\frametitle{Some Notes on GPU parallelism Vs CPU parallelsim}
+\begin{itemize}
+\item CPU parallelism is straightforward: 
+	\begin{itemize}
+	\item Do more things with more CPUs!
+	\item No issues with moving data around, but usually there are only O(100) cores on a compute node.
+	\item Very few situations where a parallel CPU application doesn't give speed up.
+	\end{itemize}		
+\item GPU parallelism is more involved:
+	\begin{itemize}
+	\item Device memory constraints.
+	\item GPU bandwidth constraints
+	\item Shared memory / block and thread geometry
+	\item Sometimes GPU parallelising isn't worth the overhead.
+	\end{itemize}
+\end{itemize}
+}
+
 
 
 \frame{\frametitle{Using OpenACC and PGI++}
