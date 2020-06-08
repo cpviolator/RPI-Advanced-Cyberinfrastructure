@@ -455,7 +455,7 @@ void latticePercolate(bool bond[L][L][4], int label[L][L], const double phi[L][L
   {
     
     //v2: Notice that the bond array is not initialised, rather we allow the 
-    //    compute threads to decide for is using an if/else. 
+    //    compute threads to decide for us using an if/else. 
     //    CLASS QUESTION: Is this desireable?
 #pragma acc parallel loop collapse(2)
     for(int x=0; x<L; x++)
