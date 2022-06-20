@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define FLOAT double
+#define FLOAT float
 
 void vecfill( FLOAT *a, FLOAT *b, int n ){
 #pragma present(a[0:n]) present(b[0:n]) 
@@ -48,13 +48,13 @@ int main( int argc, char* argv[] ){
 #pragma acc data create(a[0:n], b[0:n], r[0:n])
   {
     vecfill( a, b, n );
-    for (int i=0; i<k; i++) {
+    for (i=0; i<k; i++) {
       vecmultgpu( r, a, b, n );
       vecaddgpu( r, a, b, n );
     }
   }
   time += (FLOAT)clock();
   
-  printf( "GPU time %g sec\n", time*1e-6 );
+  printf( "Time %g sec\n", time*1e-6 );
   return 0;
 } 
