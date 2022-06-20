@@ -7,7 +7,7 @@
 /*
 1. #pragma acc data present array[...]
    This pragma tells the compiler that the data in `array` is already present on 
-   the device. As such, PGI++ does not have to generate implicit copies
+   the device. As such, NVC(C) does not have to generate implicit copies
    of `array` each time a GPU accelerator loops is compiled
 2. #pragma acc parallel loop collapse(N)
    Here we tell the compiler that there are two loops in a nested structure,
