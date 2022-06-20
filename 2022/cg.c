@@ -237,7 +237,7 @@ int main( int argc, char* argv[] ){
     tol = atof( argv[3] );
     diag = atoi( argv[4] );
   } else {
-    printf("Error in command line params\n");
+    printf("Error in command line params <N> <maxiter> <tol> <diagonal>\n");
     exit(0);
   }
 
@@ -277,19 +277,19 @@ int main( int argc, char* argv[] ){
     cg(mat, x, b, tol, maxiter);
   }  
   time += (FLOAT)clock();
-  printf( "GPU CG invert time %g sec\n", time*1e-6 );
+  printf( "CG invert time %g sec\n", time*1e-6 );
 
   
-  // Perturb the matrix, use previous solution as initial guess
+  // Perturb the matrix 
   for(int k=0; k<n; k++) {
     mat[k][k] += 1e-4;
   }
-  // Pertub the guess, use the same matrix.
+  // Pertub the guess
   //x[0] =- 0.000001;
 #pragma acc data copyin(mat[0:n][0:n], b[0:n]) copy(x[0:n])
   {
     cg(mat, x, b, tol, maxiter);  
   }  
   time += (FLOAT)clock();
-  printf( "GPU CG invert with initial guess time %g sec\n", time*1e-6 );  
+  printf( "CG invert with initial guess time %g sec\n", time*1e-6 );  
 } 
